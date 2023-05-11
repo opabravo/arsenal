@@ -35,9 +35,9 @@ class App:
 
         parser = argparse.ArgumentParser(
             prog="arsenal",
-            description='arsenal v{} - Pentest command launcher'.format(__version__),
+            description=f'arsenal v{__version__} - Pentest command launcher',
             epilog=examples,
-            formatter_class=argparse.RawTextHelpFormatter
+            formatter_class=argparse.RawTextHelpFormatter,
         )
 
         group_out = parser.add_argument_group('output [default = prefill]')
@@ -47,7 +47,12 @@ class App:
         group_out.add_argument('-e', '--exec', action='store_true', help='Execute cmd')
         group_out.add_argument('-t', '--tmux', action='store_true', help='Send command to tmux panel')
         group_out.add_argument('-c', '--check', action='store_true', help='Check the existing commands')
-        parser.add_argument('-V', '--version', action='version', version='%(prog)s (version {})'.format(__version__))
+        parser.add_argument(
+            '-V',
+            '--version',
+            action='version',
+            version=f'%(prog)s (version {__version__})',
+        )
 
         return parser.parse_args()
 
@@ -70,10 +75,9 @@ class App:
             # launch gui
             cmd = gui.run(cheatsheets)
 
-            if cmd == None:
+            if cmd is None:
                 exit(0)
 
-            # Internal CMD
             elif cmd.cmdline[0] == '>':
                 if cmd.cmdline == ">exit":
                     break
@@ -82,7 +86,7 @@ class App:
                         with open(config.savevarfile, 'r') as f:
                             arsenalGlobalVars = json.load(f)
                             for k, v in arsenalGlobalVars.items():
-                                print(k + "=" + v)
+                                print(f"{k}={v}")
                     break
                 elif cmd.cmdline == ">clear":
                     with open(config.savevarfile, "w") as f:
@@ -105,7 +109,6 @@ class App:
                     print("Arsenal: invalid internal command..")
                     break
 
-            # OPT: Copy CMD to clipboard
             elif args.copy:
                 try:
                     import pyperclip
@@ -114,18 +117,15 @@ class App:
                     pass
                 break
 
-            # OPT: Only print CMD
             elif args.print:
                 print(cmd.cmdline)
                 break
 
-            # OPT: Write in file
             elif args.outfile:
                 with open(args.outfile, 'w') as f:
                     f.write(cmd.cmdline)
                 break
 
-            # OPT: Exec
             elif args.exec and not args.tmux:
                 os.system(cmd.cmdline)
                 break
@@ -156,7 +156,6 @@ class App:
                 except ImportError:
                     self.prefil_shell_cmd(cmd)
                     break
-            # DEFAULT: Prefill Shell CMD
             else:
                 self.prefil_shell_cmd(cmd)
                 break

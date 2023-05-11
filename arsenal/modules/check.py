@@ -31,7 +31,7 @@ def check(cheatsheets):
                                                                            cheat.printable_command, bcolors.ENDC))
                     continue
                 try:
-                    cmd = interactive_shell + ' -i -c "type %s"' % shlex.quote(binary)
+                    cmd = f'{interactive_shell} -i -c "type {shlex.quote(binary)}"'
                     output = subprocess.check_output(cmd, shell=True, executable='/bin/zsh').decode()
                     print(
                         '{}{:<6s} : {} ({}){}'.format(bcolors.GREEN, '✔ OK', binary, output.split('\n')[0],

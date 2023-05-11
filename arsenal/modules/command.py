@@ -15,9 +15,7 @@ class Command:
         self.cmdline = cheat.command
 
         self.cmd_tags = cheat.command_tags
-        self.description = ''
-        for tag in self.cmd_tags:
-            self.description += '[' + self.cmd_tags[tag] + '] '
+        self.description = ''.join(f'[{self.cmd_tags[tag]}] ' for tag in self.cmd_tags)
         if self.description != '' and cheat.description != '':
             self.description += '\n-----\n'
         self.description += cheat.description
@@ -61,12 +59,10 @@ class Command:
                 self.args.append([arg_name, ""])
 
     def get_command_parts(self):
-        if self.nb_args != 0:
-            regex = ''.join('<' + arg[0] + '>|' for arg in self.args)[:-1]
-            cmdparts = re.split(regex, self.cmdline)
-        else:
-            cmdparts = [self.cmdline]
-        return cmdparts
+        if self.nb_args == 0:
+            return [self.cmdline]
+        regex = ''.join(f'<{arg[0]}>|' for arg in self.args)[:-1]
+        return re.split(regex, self.cmdline)
 
     def build(self):
         """
@@ -79,15 +75,12 @@ class Command:
         argsval = [a[1] for a in self.args]
         if "" not in argsval:
             # split cmdline at each arg position
-            regex = ''.join('<' + arg[0] + '>|' for arg in self.args)[:-1]
+            regex = ''.join(f'<{arg[0]}>|' for arg in self.args)[:-1]
             cmdparts = re.split(regex, self.cmdline)
             # concat command parts and arguments values to build the command
             self.cmdline = ""
             for i in range(len(cmdparts) + len(self.args)):
-                if i % 2 == 0:
-                    self.cmdline += cmdparts[i // 2]
-                else:
-                    self.cmdline += argsval[(i - 1) // 2]
+                self.cmdline += cmdparts[i // 2] if i % 2 == 0 else argsval[(i - 1) // 2]
             curses.endwin()
 
         # build ok ?
