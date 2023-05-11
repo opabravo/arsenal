@@ -28,17 +28,10 @@ class Cheat:
         return self.name != "" and self.command != "" and not self.command_capture
 
     def inline_cheat(self):
-        return "{}{}{}".format({self.tags}, {self.name}, {self.command})
+        return f"{{self.tags}}{{self.name}}{{self.command}}"
 
     def get_rating(self):
-        # Rating
-        rate = ""
-        for i in range(0, 5):
-            if self.rate <= i:
-                rate += "★"
-            else:
-                rate += "⭐"
-        return rate
+        return "".join("★" if self.rate <= i else "⭐" for i in range(0, 5))
 
     def get_tags(self):
         tags_dict = {'target/local': 'Loc',
@@ -52,13 +45,13 @@ class Cheat:
         tag_string = ''
         if self.command_tags is not None:
             for tag_key in self.command_tags.keys():
-                tag = tag_key + '/' + self.command_tags[tag_key]
-                if tag in tags_dict.keys():
-                    tag_string += '' + tags_dict[tag]
+                tag = f'{tag_key}/{self.command_tags[tag_key]}'
+                if tag in tags_dict:
+                    tag_string += f'{tags_dict[tag]}'
                 elif 'cat/' in tag:
                     tag_string += ' ' + tag.split('cat/')[1].upper().strip()
-                # else:
-                #     tag_string += '|' + tag.lower().strip()
+                        # else:
+                        #     tag_string += '|' + tag.lower().strip()
         return tag_string
 
 
@@ -149,7 +142,7 @@ class Cheats:
     def end_cheat(self):
         self.current_cheat.tags = self.current_tags
         self.current_cheat.str_title = ", ".join(self.titles[:-1])
-        if self.current_cheat.str_title == '':
+        if not self.current_cheat.str_title:
             self.current_cheat.str_title = self.firsttitle
         # merge ref cmd_tags (title) with current_cheat cmd tags
         if len(self.command_tags_ref) > 0:
@@ -175,7 +168,7 @@ class Cheats:
         with open(filename, "r") as fd:
             text = fd.read()
             settings = OptionParser(components=(rst.Parser,)).get_default_values()
-            document = new_document(filename + ".tmp", settings)
+            document = new_document(f"{filename}.tmp", settings)
             parser.parse(text, document)
             visitor = ArsenalRstVisitor(document, self)
             document.walk(visitor)
@@ -235,7 +228,7 @@ class Cheats:
                     if "exec_variables" in tool.keys():
                         for variable in tool["exec_variables"]:
                             varname, varval = list(variable.items())[0]
-                            self.filevars[varname] = "$(" + varval + ")"
+                            self.filevars[varname] = f"$({varval})"
 
                     if "command_tags" in tool.keys():
                         for cmd_tag in tool["command_tags"]:
@@ -257,7 +250,7 @@ class Cheats:
                                 if "/" in cmd_tag:
                                     cat, value = cmd_tag.split("/", 1)
                                     self.current_cheat.command_tags[cat] = value
-                        
+
                         self.end_cheat()
 
         for varname, varval in self.filevars.items():
@@ -296,7 +289,7 @@ class Cheats:
         nb = 0
 
         with open(filename) as f:
-            for entry in f.readlines():
+            for entry in f:
                 line = entry.strip('\n')
                 nb += 1
 
@@ -314,7 +307,7 @@ class Cheats:
                 # Name & Titles
                 if line.startswith('# ') or line.startswith('##'):
                     if self.current_cheat.command_capture:
-                        raise Exception('Error parsing (Title) markdown file ' + filename + ' line: ' + str(nb))
+                        raise Exception(f'Error parsing (Title) markdown file {filename} line: {nb}')
                     # if no cmd but description use description as the command
                     if self.current_cheat.command == "" and self.current_cheat.description != "":
                         self.current_cheat.command = self.current_cheat.description.replace('\n', ';\\\n')
@@ -344,7 +337,9 @@ class Cheats:
                         self.titles.append(title)
 
                     else:
-                        raise Exception('Error parsing (Title Skip) markdown file ' + filename + ' line: ' + str(nb))
+                        raise Exception(
+                            f'Error parsing (Title Skip) markdown file {filename} line: {nb}'
+                        )
                     self.new_cheat()
                     continue
 
@@ -371,7 +366,7 @@ class Cheats:
                     if self.current_cheat.name != "":
                         self.current_cheat.command_capture = not self.current_cheat.command_capture
                     else:
-                        raise Exception('Error parsing (CMD Start/End) markdown file ' + filename)
+                        raise Exception(f'Error parsing (CMD Start/End) markdown file {filename}')
                     continue
 
                 # CMD
@@ -382,19 +377,20 @@ class Cheats:
                             self.current_cheat.command = line.rstrip()
                         else:
                             # multi lines cmd
-                            if self.current_cheat.command[-1] == ';':
-                                self.current_cheat.command += "\\\n" + line.rstrip()
-                            else:
-                                self.current_cheat.command += ";\\\n" + line.rstrip()
+                            self.current_cheat.command += (
+                                "\\\n" + line.rstrip()
+                                if self.current_cheat.command[-1] == ';'
+                                else ";\\\n" + line.rstrip()
+                            )
                         continue
                     else:
-                        raise Exception('Error parsing (CMD) markdown file ' + filename)
+                        raise Exception(f'Error parsing (CMD) markdown file {filename}')
 
                 # Executable Variables
                 if line.startswith('$') and not self.current_cheat.command_capture:
                     varname = line[2:].split(':')[0].strip()
                     varval = line[2:].split(':')[1].strip()
-                    self.filevars[varname] = "$(" + varval + ")"
+                    self.filevars[varname] = f"$({varval})"
                     continue
 
                 # Constant Variables
@@ -441,6 +437,6 @@ class Cheats:
         for path in paths:
             for file_format in file_formats:
                 for entry in Path(path).rglob('*.{0}'.format(file_format)):
-                    if entry.name not in exclude_list and file_format in parsers.keys():
+                    if entry.name not in exclude_list and file_format in parsers:
                         parsers[file_format](str(entry.absolute()))
         return self.cheatsheets
